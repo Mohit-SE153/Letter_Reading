@@ -1,0 +1,64 @@
+# Python / Streamlit temporary files and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+coverage.xml
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Streamlit / app runtime files
+.streamlit/
+my_data.db
+*.db
+*.sqlite
+*.sqlite3
+my_data.db-shm
+my_data.db-wal
+
+# Sensitive / secret files (never commit!)
+.env
+secrets.toml
+*.key
+*.pem
+*.secret
+
+# Your personal PDFs, Excel files, and other documents (not part of the app)
+*.pdf
+*.xlsx
+*.xls
+*.docx
+# *.txt
+*.csv
+
+# Windows / OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.tmp
+*.log
+
+# Editor / IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Any other large or irrelevant files you might create later
+*.bak
+*.old
+*.backup
