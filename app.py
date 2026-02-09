@@ -25,7 +25,29 @@ except ImportError:
     convert_from_bytes = None
 
 # ─── IMPORTANT: Move DB_FILE to the VERY TOP ───────────────────────────────
-DB_FILE = os.getenv("DB_FILE", "my_data.db")
+DB_FILE = "my_data.db"
+
+conn = sqlite3.connect(DB_FILE)
+cursor = conn.cursor()
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS cases (
+        Case_ID TEXT PRIMARY KEY,
+        Member_Name TEXT,
+        NI_Number TEXT,
+        Date_of_Birth TEXT,
+        Old_Address TEXT,
+        New_Address TEXT,
+        Correspondence_Address TEXT,
+        Pension_Account_Number TEXT,
+        Case_Type TEXT,
+        Case_Subtype TEXT,
+        Case_Status TEXT,
+        Pending_Reason TEXT,
+        Expected_Document TEXT
+    )
+''')
+conn.commit()
+conn.close()
 
 # ─── IMPORTANT: Replace with your actual OpenAI API key ───
 load_dotenv()
@@ -127,11 +149,7 @@ def get_pdf_pages(uploaded_file):
             return []
 
         try:
-            pages = convert_from_bytes(
-                file_bytes,
-                dpi=180,
-                poppler_path=r"C:\Program Files\poppler\Library\bin"
-            )
+            pages = convert_from_bytes(file_bytes, dpi=180)
             if not pages:
                 st.error("No pages found in PDF.")
                 return []
