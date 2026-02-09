@@ -17,6 +17,7 @@ from streamlit_folium import st_folium
 from dateutil.parser import parse
 import os
 from dotenv import load_dotenv
+import fitz
 
 try:
     from pdf2image import convert_from_bytes
@@ -143,29 +144,24 @@ def get_pdf_pages(uploaded_file):
             return []
 
     elif uploaded_file.type == "application/pdf":
-        if convert_from_bytes is None:
-            st.error("pdf2image not installed → run: pip install pdf2image")
-            st.info("Also install Poppler system dependency")
-            return []
-
         try:
-            pages = convert_from_bytes(file_bytes, dpi=180)
+            # Open PDF from bytes using PyMuPDF
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            pages = []
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)
+                pix = page.get_pixmap(dpi=180)  # Same DPI as before
+                img_bytes = pix.tobytes("png")
+                img = Image.open(io.BytesIO(img_bytes))
+                pages.append(img)
+            doc.close()
             if not pages:
                 st.error("No pages found in PDF.")
                 return []
             return pages
 
-        except PDFInfoNotInstalledError:
-            st.error("Poppler not installed or not in PATH.")
-            st.markdown("""
-            **Fix examples:**
-            - Windows → download Poppler binary, add `bin/` to PATH
-            - Ubuntu/Debian → `sudo apt install poppler-utils`
-            - macOS → `brew install poppler`
-            """)
-            return []
         except Exception as e:
-            st.error(f"PDF → image conversion failed: {str(e)}")
+            st.error(f"PDF processing failed: {str(e)}")
             return []
 
     else:
