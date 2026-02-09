@@ -26,29 +26,94 @@ except ImportError:
     convert_from_bytes = None
 
 # ─── IMPORTANT: Move DB_FILE to the VERY TOP ───────────────────────────────
+# ─── IMPORTANT: Move DB_FILE to the VERY TOP ───────────────────────────────
 DB_FILE = "my_data.db"
 
-conn = sqlite3.connect(DB_FILE)
-cursor = conn.cursor()
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS cases (
-        Case_ID TEXT PRIMARY KEY,
-        Member_Name TEXT,
-        NI_Number TEXT,
-        Date_of_Birth TEXT,
-        Old_Address TEXT,
-        New_Address TEXT,
-        Correspondence_Address TEXT,
-        Pension_Account_Number TEXT,
-        Case_Type TEXT,
-        Case_Subtype TEXT,
-        Case_Status TEXT,
-        Pending_Reason TEXT,
-        Expected_Document TEXT
-    )
-''')
-conn.commit()
-conn.close()
+# ─── Safe one-time database initialization ─────────────────────────────────────
+def init_database():
+    # Open a fresh connection for initialization
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    # 1. Create cases table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS cases (
+            Case_ID TEXT PRIMARY KEY,
+            Member_Name TEXT,
+            NI_Number TEXT,
+            Date_of_Birth TEXT,
+            Old_Address TEXT,
+            New_Address TEXT,
+            Correspondence_Address TEXT,
+            Pension_Account_Number TEXT,
+            Case_Type TEXT,
+            Case_Subtype TEXT,
+            Case_Status TEXT,
+            Pending_Reason TEXT,
+            Expected_Document TEXT
+        )
+    ''')
+
+    # 2. Create Supporting_Documents table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS Supporting_Documents (
+            Case_Type TEXT,
+            Documents_Required TEXT,
+            PRIMARY KEY (Case_Type, Documents_Required)
+        )
+    ''')
+
+    conn.commit()
+
+    # 3. Check if Supporting_Documents has any rows
+    cursor.execute("SELECT COUNT(*) FROM Supporting_Documents")
+    count = cursor.fetchone()[0]
+
+    if count == 0:
+        # Insert default rows only if table is empty (runs only once)
+        supporting_data = [
+            ("Address Change", "Council Tax Bill"),
+            ("Address Change", "Driving licence"),
+            ("Address Change", "Passport"),
+            ("Lump Sum", "Passport"),
+            ("Lump Sum", "Driving licence"),
+            ("Death Case", "Death Certificate"),
+            ("Payment Change", "Passport"),
+            ("Payment Change", "Driving licence"),
+            ("Retirement", "Passport"),
+            ("Retirement", "Driving licence"),
+            ("Retirement", "Birth Certificate"),
+            ("Beneficiary Update", "Passport"),
+            ("Beneficiary Update", "Driving licence"),
+            ("Payment Setup", "Passport"),
+            ("Payment Setup", "Driving Licence"),
+            ("Divorce", "Marriage Certificate"),
+        ]
+
+        cursor.executemany(
+            "INSERT OR IGNORE INTO Supporting_Documents (Case_Type, Documents_Required) VALUES (?, ?)",
+            supporting_data
+        )
+        conn.commit()
+        st.info("Supporting_Documents table was empty → inserted default rows.")
+
+    # else:
+    #     st.info("Supporting_Documents table already has data → skipping insert.")
+
+    # Close the connection when done
+    conn.close()
+
+# Run initialization once when the app loads
+init_database()
+
+# ─── IMPORTANT: Replace with your actual OpenAI API key ───
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    st.error("OpenAI API key not found. Please set it in the .env file or in Streamlit Cloud secrets.")
+    st.stop()
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ─── IMPORTANT: Replace with your actual OpenAI API key ───
 load_dotenv()
